@@ -137,16 +137,25 @@ st.title("🏦 Customer Churn Prediction Dashboard")
 st.write(
     "Predict whether a customer will stay with the bank or churn using Machine Learning."
 )
-
 # -------------------------------------------------------
 # LOAD DATA
 # -------------------------------------------------------
+# -------------------------------------------------------
+# LOAD DATA
+# -------------------------------------------------------
+import os
+
 @st.cache_data
 def load_data():
-    df = pd.read_csv(r"D:\devin\SUmmer training\Churn_Modelling.csv")
+    # Always use relative path so it works in the cloud
+    file_path = os.path.join(os.path.dirname(__file__), "Churn_Modelling.csv")
+    df = pd.read_csv(file_path)
     return df
 
 df = load_data()
+
+
+
 
 # -------------------------------------------------------
 # PREPROCESSING
@@ -218,7 +227,8 @@ with col3:
 
 with col4:
     st.metric("❌ Churned", churned)
-    # -------------------------------------------------------
+
+# -------------------------------------------------------
 # SIDEBAR
 # -------------------------------------------------------
 st.sidebar.header("🧾 Customer Information")
@@ -298,7 +308,6 @@ active_member = 1 if IsActiveMember == "Yes" else 0
 # CREATE INPUT DATAFRAME
 # -------------------------------------------------------
 input_data = pd.DataFrame({
-
     "CreditScore": [CreditScore],
     "Geography": [geo],
     "Gender": [gender],
@@ -309,7 +318,6 @@ input_data = pd.DataFrame({
     "HasCrCard": [credit_card],
     "IsActiveMember": [active_member],
     "EstimatedSalary": [EstimatedSalary]
-
 })
 
 # -------------------------------------------------------
@@ -318,7 +326,6 @@ input_data = pd.DataFrame({
 st.subheader("📋 Customer Details")
 
 display_df = pd.DataFrame({
-
     "Credit Score": [CreditScore],
     "Geography": [Geography],
     "Gender": [Gender],
@@ -329,23 +336,21 @@ display_df = pd.DataFrame({
     "Credit Card": [HasCrCard],
     "Active Member": [IsActiveMember],
     "Estimated Salary (£)": [EstimatedSalary]
-
 })
 
 st.dataframe(
     display_df,
     use_container_width=True
 )
+
 # -------------------------------------------------------
 # PREDICTION
 # -------------------------------------------------------
-
 st.markdown("---")
 
 if st.button("🔍 Predict Customer Churn"):
 
     prediction = model.predict(input_data)[0]
-
     probability = model.predict_proba(input_data)[0]
 
     retained_probability = float(probability[0])
@@ -365,14 +370,12 @@ if st.button("🔍 Predict Customer Churn"):
     col1, col2 = st.columns(2)
 
     with col1:
-
         st.metric(
             "Retained Probability",
             f"{retained_probability*100:.2f}%"
         )
 
     with col2:
-
         st.metric(
             "Churn Probability",
             f"{churn_probability*100:.2f}%"
@@ -394,15 +397,10 @@ if st.button("🔍 Predict Customer Churn"):
     )
 
     if churn_probability >= 0.80:
-
         st.error("🔴 High Risk Customer")
-
     elif churn_probability >= 0.50:
-
         st.warning("🟠 Moderate Risk Customer")
-
     else:
-
         st.success("🟢 Low Risk Customer")
 
     st.markdown("---")
