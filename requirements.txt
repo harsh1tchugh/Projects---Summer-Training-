@@ -4,7 +4,5 @@ scikit-learn
 numpy
 matplotlib
 seaborn
-<<<<<<< HEAD
-=======
+opencv-python-headless==4.8.1.78
 
->>>>>>> b4f7c43190889d04484ed44ceb7b5ef0292a17fb
