@@ -22,12 +22,17 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* Main Title */
+/* ===========================
+   PAGE TITLE
+=========================== */
 h1{
     text-align:center;
     color:#DAA520;
 }
 
+/* ===========================
+   METRIC CARDS
+=========================== */
 [data-testid="stMetric"]{
     background:#F8F9FA;
     border-radius:12px;
@@ -35,29 +40,90 @@ h1{
 }
 
 [data-testid="stMetric"] *{
-    color:goldenrod !important;
+    color:#DAA520 !important;
 }
 
-/* Buttons */
+/* ===========================
+   SIDEBAR
+=========================== */
+section[data-testid="stSidebar"]{
+    background:#0E1117 !important;
+}
+
+section[data-testid="stSidebar"] *{
+    color:white !important;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
 .stButton>button{
     width:100%;
     height:50px;
     border-radius:12px;
     background:#DAA520;
-    color:black;
+    color:black !important;
     font-size:18px;
     font-weight:bold;
+    border:none;
 }
 
-/* Button Hover */
 .stButton>button:hover{
-    background:#c89b1a;
-    color:grey;
+    background:#c89b1a !important;
+    color:white !important;
 }
 
-/* Progress Bar */
+/* ===========================
+   PROGRESS BAR
+=========================== */
 .stProgress > div > div > div > div{
-    background:#DAA520;
+    background:#DAA520 !important;
+}
+
+/* ===========================
+   STREAMLIT 1.59 SLIDER
+=========================== */
+
+/* Theme Variables */
+:root{
+    --primary-color:#DAA520 !important;
+    --secondary-background-color:#262730 !important;
+}
+
+/* Slider */
+.stSlider{
+    --primary-color:#DAA520 !important;
+}
+
+/* Slider Thumb */
+.stSlider [role="slider"]{
+    background:#DAA520 !important;
+    border:2px solid #DAA520 !important;
+    box-shadow:none !important;
+}
+
+/* Slider Track */
+.stSlider [data-baseweb="slider"]{
+    --primary:#DAA520 !important;
+    --primary-color:#DAA520 !important;
+    --accent:#DAA520 !important;
+    --thumb-color:#DAA520 !important;
+}
+
+/* Active & Inactive Track */
+.stSlider [data-baseweb="slider"] div{
+    background-color:#DAA520 !important;
+}
+
+/* Number input and selectbox */
+.stNumberInput input,
+.stSelectbox div[data-baseweb="select"] > div{
+    border:2px solid #DAA520 !important;
+}
+
+/* Checkbox */
+.stCheckbox input:checked{
+    accent-color:#DAA520 !important;
 }
 
 </style>
@@ -77,10 +143,11 @@ st.write(
 # -------------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Churn_Modelling.csv")
+    df = pd.read_csv(r"D:\devin\SUmmer training\Churn_Modelling.csv")
     return df
 
 df = load_data()
+
 # -------------------------------------------------------
 # PREPROCESSING
 # -------------------------------------------------------
