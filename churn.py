@@ -77,7 +77,7 @@ st.write(
 # -------------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv(r"D:\devin\SUmmer training\Churn_Modelling.csv")
+    df = pd.read_csv("Churn_Modelling.csv")
     return df
 
 df = load_data()
