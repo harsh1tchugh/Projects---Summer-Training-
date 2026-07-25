@@ -4,3 +4,7 @@ scikit-learn
 numpy
 matplotlib
 seaborn
+<<<<<<< HEAD
+=======
+
+>>>>>>> b4f7c43190889d04484ed44ceb7b5ef0292a17fb
