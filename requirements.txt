@@ -18,3 +18,4 @@ seaborn
 requests
 scipy
 streamlit_webrtc
+mediapipe==0.10.9
