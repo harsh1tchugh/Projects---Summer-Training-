@@ -139,7 +139,7 @@ def load_sd_pipeline():
         return pipe.to("cpu")
 
 # ---------------------------------------------------------
-# Free HuggingFace Inference API Query Handler
+# Online HuggingFace Inference API Handler
 # ---------------------------------------------------------
 def query_hf_api(prompt):
     API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
@@ -182,9 +182,9 @@ def detect_intent(text, words):
         return "TTS"
 
     # Natural conversation intents
-    if any(w in text_lower for w in ["how are you", "how r u", "how do you do"]):
+    if any(phrase in text_lower for phrase in ["how are you", "how r u", "how do you do"]):
         return "HOW_ARE_YOU"
-    if any(w in text_lower for w in ["who are you", "what is your name", "what are you"]):
+    if any(phrase in text_lower for phrase in ["who are you", "what is your name", "what are you"]):
         return "WHO_ARE_YOU"
     if any(w in words for w in ["hi", "hello", "hey", "greetings"]):
         return "GREETING"
@@ -223,7 +223,7 @@ with col_clear:
         st.rerun()
 
 # ---------------------------------------------------------
-# Rearranged Control Sidebar
+# Control Sidebar (Compute Status Removed)
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("## 🧭 Workspace Navigation")
@@ -253,12 +253,19 @@ with st.sidebar:
         if st.button("Process Audio Track", use_container_width=True):
             with st.spinner("Decoding audio via Whisper..."):
                 import soundfile as sf
+                import librosa
                 
                 audio_bytes = uploaded_audio.read()
                 data, samplerate = sf.read(io.BytesIO(audio_bytes))
                 
+                # Convert stereo to mono
                 if len(data.shape) > 1:
                     data = data.mean(axis=1)
+
+                # Resample to 16000Hz (Whisper native rate) to avoid torchaudio requirement
+                if samplerate != 16000:
+                    data = librosa.resample(y=data, orig_sr=samplerate, target_sr=16000)
+                    samplerate = 16000
 
                 asr = load_asr_pipeline()
                 res = asr({"raw": data, "sampling_rate": samplerate})
@@ -344,7 +351,7 @@ if user_prompt:
             st.markdown(resp_text)
             bot_message = {"role": "assistant", "content": resp_text}
 
-        # 5. Language Model Text Generation (Smart Online API + Local Fallback)
+        # 5. Language Model Generation (Smart Online Model + Safe Fallback)
         else:
             with st.spinner("⚡ Aura thinking..."):
                 api_response = query_hf_api(user_prompt)
@@ -374,7 +381,7 @@ if user_prompt:
                         clean_reply = raw_reply
 
                     if not clean_reply or len(clean_reply) < 5:
-                        clean_reply = "I am Aura AI. How can I assist you with your request today?"
+                        clean_reply = "I am Aura AI. How can I assist you today?"
 
                 st.markdown(clean_reply)
                 bot_message = {"role": "assistant", "content": clean_reply}
