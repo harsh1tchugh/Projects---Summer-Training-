@@ -223,7 +223,7 @@ with col_clear:
         st.rerun()
 
 # ---------------------------------------------------------
-# Control Sidebar (Compute Status Removed)
+# Control Sidebar
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("## 🧭 Workspace Navigation")
@@ -329,8 +329,12 @@ if user_prompt:
         elif intent == "TTS":
             with st.spinner("🔊 Generating voice audio..."):
                 speech_text = user_prompt
-                pattern = r"\b(say out loud|text to speech|speak|read this out|convert to audio|convert|speech|tts|say|to)\b"
-                speech_text = re.sub(pattern, "", speech_text, flags=re.IGNORECASE).strip()
+                
+                # Carefully strip command prefixes/suffixes without stripping content words like 'to' or 'in'
+                speech_text = re.sub(r"^(convert|say out loud|text to speech|speak|read this out|say|tts)\s+", "", speech_text, flags=re.IGNORECASE)
+                speech_text = re.sub(r"\s+(to speech|in speech|to audio|in audio)$", "", speech_text, flags=re.IGNORECASE)
+                speech_text = speech_text.strip()
+
                 speech_text = speech_text if speech_text else "Audio stream initialized."
                 
                 tts = gTTS(text=speech_text, lang='en')
