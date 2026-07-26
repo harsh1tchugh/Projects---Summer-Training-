@@ -1,10 +1,12 @@
 streamlit
 torch
+torchaudio
 transformers
 diffusers
 gTTS
 nltk
 soundfile
+librosa
 accelerate
 pandas
 scikit-learn
