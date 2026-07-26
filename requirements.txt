@@ -1,4 +1,11 @@
 streamlit
+torch
+transformers
+diffusers
+gTTS
+nltk
+soundfile
+accelerate
 pandas
 scikit-learn
 numpy==1.26.4
