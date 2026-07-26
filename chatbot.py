@@ -2,6 +2,7 @@ import os
 import random
 import io
 import re
+import requests
 import torch
 import nltk
 import streamlit as st
@@ -26,7 +27,6 @@ st.set_page_config(
     layout="centered"
 )
 
-# Dark Cyan & Violet Minimalist Theme
 st.markdown("""
 <style>
     .stApp {
@@ -78,11 +78,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 RESPONSES = {
-    "greeting": ["Greetings! How can Aura assist your workflow today?", "Hello there! What are we creating next?", "Welcome back. System ready."],
-    "how_are_you": ["All neural models are loaded and functioning optimally! How are you?"],
-    "goodbye": ["Goodbye! Have an insightful day ahead.", "Session ended. Reach back out anytime!"],
-    "help": ["Aura can assist with text generation, image creation from prompts, text-to-speech audio, or transcription."],
-    "thank": ["You're most welcome!", "Glad to be of service!", "Anytime! Let me know if you need anything else."]
+    "greeting": [
+        "Greetings! How can Aura assist your workflow today?",
+        "Hello there! What are we creating next?",
+        "Welcome back. Systems online and ready!"
+    ],
+    "how_are_you": [
+        "I'm performing at 100%! All systems operational. How are you doing today?",
+        "Doing great and ready to assist! What project are we tackling today?",
+        "I'm operating smoothly! Thanks for asking. How can I help you right now?"
+    ],
+    "who_are_you": [
+        "I am Aura, your multi-modal AI assistant capable of text generation, image creation, speech synthesis, and audio transcription."
+    ],
+    "goodbye": [
+        "Goodbye! Have an insightful day ahead.",
+        "Session ended. Reach back out anytime!"
+    ],
+    "help": [
+        "Aura can assist with text generation, image creation from prompts, text-to-speech audio synthesis, or audio transcription."
+    ],
+    "thank": [
+        "You're most welcome!",
+        "Glad to be of service!",
+        "Anytime! Let me know if you need anything else."
+    ]
 }
 
 stop_words = set(stopwords.words('english'))
@@ -119,6 +139,25 @@ def load_sd_pipeline():
         return pipe.to("cpu")
 
 # ---------------------------------------------------------
+# Free HuggingFace Inference API Query Handler
+# ---------------------------------------------------------
+def query_hf_api(prompt):
+    API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
+    payload = {
+        "inputs": f"<|system|>\nYou are Aura, an intelligent and helpful AI assistant. Answer clearly and concisely.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n",
+        "parameters": {"max_new_tokens": 150, "temperature": 0.7, "return_full_text": False}
+    }
+    try:
+        response = requests.post(API_URL, json=payload, timeout=8)
+        if response.status_code == 200:
+            res_json = response.json()
+            if isinstance(res_json, list) and "generated_text" in res_json[0]:
+                return res_json[0]["generated_text"].strip()
+    except Exception:
+        pass
+    return None
+
+# ---------------------------------------------------------
 # Intent Parsing Engine
 # ---------------------------------------------------------
 def detect_intent(text, words):
@@ -132,23 +171,25 @@ def detect_intent(text, words):
     action_keywords = ["generate", "genrate", "create", "make", "draw", "render"]
     
     is_image_request = any(k in text_lower for k in image_keywords) or \
-                       any(a in text_lower for a in action_keywords) and ("cat" in text_lower or "of" in text_lower)
+                       (any(a in text_lower for a in action_keywords) and ("cat" in text_lower or "of" in text_lower))
 
     if is_image_request:
         return "IMAGE_GEN"
     
-    # Audio synthesis requests (expanded keywords)
+    # Audio synthesis requests
     tts_triggers = ["say out loud", "text to speech", "speak", "read this out", "convert to audio", "tts", "convert", "speech", "say"]
     if any(trigger in text_lower for trigger in tts_triggers):
         return "TTS"
 
     # Natural conversation intents
+    if any(w in text_lower for w in ["how are you", "how r u", "how do you do"]):
+        return "HOW_ARE_YOU"
+    if any(w in text_lower for w in ["who are you", "what is your name", "what are you"]):
+        return "WHO_ARE_YOU"
     if any(w in words for w in ["hi", "hello", "hey", "greetings"]):
         return "GREETING"
     if "help" in words:
         return "HELP"
-    if "how" in words and "you" in words:
-        return "HOW_ARE_YOU"
     if any(w in words for w in ["bye", "goodby", "see"]):
         return "GOODBYE"
     if "thank" in words or "thanks" in words:
@@ -175,7 +216,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Main Workspace Reset Button
 col_main, col_clear = st.columns([5, 1])
 with col_clear:
     if st.button("🧹 Reset", use_container_width=True):
@@ -183,7 +223,7 @@ with col_clear:
         st.rerun()
 
 # ---------------------------------------------------------
-# Rearranged Control Sidebar (Compute Status Removed)
+# Rearranged Control Sidebar
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("## 🧭 Workspace Navigation")
@@ -191,7 +231,6 @@ with st.sidebar:
     
     st.divider()
     
-    # Sample Prompts / Usage Guide
     st.markdown("### 💡 Quick Commands")
     st.markdown("""
     <div class="quick-card">
@@ -207,7 +246,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Audio Upload Tool
     st.markdown("### 🎙️ Speech Transcriber")
     uploaded_audio = st.file_uploader("Upload recording (.wav, .mp3, .flac)", type=["wav", "mp3", "m4a", "flac"])
     
@@ -284,10 +322,8 @@ if user_prompt:
         elif intent == "TTS":
             with st.spinner("🔊 Generating voice audio..."):
                 speech_text = user_prompt
-                # Strip out voice trigger words cleanly
                 pattern = r"\b(say out loud|text to speech|speak|read this out|convert to audio|convert|speech|tts|say|to)\b"
                 speech_text = re.sub(pattern, "", speech_text, flags=re.IGNORECASE).strip()
-                
                 speech_text = speech_text if speech_text else "Audio stream initialized."
                 
                 tts = gTTS(text=speech_text, lang='en')
@@ -302,40 +338,43 @@ if user_prompt:
                 bot_message = {"role": "assistant", "content": resp_text, "audio": audio_bytes}
 
         # 4. Standard Conversational Responses
-        elif intent in ["GREETING", "HELP", "HOW_ARE_YOU", "GOODBYE", "THANK"]:
+        elif intent in ["GREETING", "HELP", "HOW_ARE_YOU", "WHO_ARE_YOU", "GOODBYE", "THANK"]:
             key = intent.lower()
             resp_text = random.choice(RESPONSES[key])
             st.markdown(resp_text)
             bot_message = {"role": "assistant", "content": resp_text}
 
-        # 5. Language Model Text Generation
+        # 5. Language Model Text Generation (Smart Online API + Local Fallback)
         else:
             with st.spinner("⚡ Aura thinking..."):
-                generator = load_llm_pipeline()
+                api_response = query_hf_api(user_prompt)
                 
-                outputs = generator(
-                    user_prompt, 
-                    max_new_tokens=75, 
-                    do_sample=True, 
-                    temperature=0.7, 
-                    top_k=40,
-                    top_p=0.9,
-                    no_repeat_ngram_size=2,
-                    pad_token_id=50256,
-                    return_full_text=False
-                )
-                
-                raw_reply = outputs[0]["generated_text"].strip()
-                
-                last_punct = max(raw_reply.rfind('.'), raw_reply.rfind('!'), raw_reply.rfind('?'))
-                
-                if last_punct != -1:
-                    clean_reply = raw_reply[:last_punct + 1]
+                if api_response:
+                    clean_reply = api_response
                 else:
-                    clean_reply = raw_reply
+                    generator = load_llm_pipeline()
+                    formatted_prompt = f"Question: {user_prompt}\nAnswer:"
+                    outputs = generator(
+                        formatted_prompt, 
+                        max_new_tokens=60, 
+                        do_sample=True, 
+                        temperature=0.6, 
+                        top_k=40,
+                        top_p=0.85,
+                        no_repeat_ngram_size=2,
+                        pad_token_id=50256,
+                        return_full_text=False
+                    )
+                    raw_reply = outputs[0]["generated_text"].strip()
+                    
+                    last_punct = max(raw_reply.rfind('.'), raw_reply.rfind('!'), raw_reply.rfind('?'))
+                    if last_punct != -1:
+                        clean_reply = raw_reply[:last_punct + 1]
+                    else:
+                        clean_reply = raw_reply
 
-                if not clean_reply:
-                    clean_reply = raw_reply if raw_reply else "..."
+                    if not clean_reply or len(clean_reply) < 5:
+                        clean_reply = "I am Aura AI. How can I assist you with your request today?"
 
                 st.markdown(clean_reply)
                 bot_message = {"role": "assistant", "content": clean_reply}
