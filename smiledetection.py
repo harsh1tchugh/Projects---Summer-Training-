@@ -21,4 +21,10 @@ if camera_image is not None:
         roi_gray = gray[y:y+h, x:x+w]
         roi_color = frame[y:y+h, x:x+w]
         smiles = smile_cascade.detectMultiScale(roi_gray, 1.8, 20)
-        if
+        if len(smiles) > 0:
+            cv2.putText(frame, "😊 Smile Detected!", (x, y-10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            for (sx, sy, sw, sh) in smiles:
+                cv2.rectangle(roi_color, (sx, sy), (sx+sw, sy+sh), (0, 255, 0), 2)
+
+    st.image(frame, channels="BGR")
