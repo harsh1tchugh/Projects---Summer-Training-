@@ -5,6 +5,8 @@ import re
 import requests
 import torch
 import nltk
+import numpy as np
+import scipy.signal
 import streamlit as st
 
 from nltk.tokenize import word_tokenize
@@ -253,7 +255,6 @@ with st.sidebar:
         if st.button("Process Audio Track", use_container_width=True):
             with st.spinner("Decoding audio via Whisper..."):
                 import soundfile as sf
-                import librosa
                 
                 audio_bytes = uploaded_audio.read()
                 data, samplerate = sf.read(io.BytesIO(audio_bytes))
@@ -262,9 +263,10 @@ with st.sidebar:
                 if len(data.shape) > 1:
                     data = data.mean(axis=1)
 
-                # Resample to 16000Hz (Whisper native rate) to avoid torchaudio requirement
+                # Resample to 16000Hz (Whisper native rate) using scipy to avoid librosa/torchaudio dependency
                 if samplerate != 16000:
-                    data = librosa.resample(y=data, orig_sr=samplerate, target_sr=16000)
+                    num_target_samples = int(len(data) * 16000 / samplerate)
+                    data = scipy.signal.resample(data, num_target_samples).astype(np.float32)
                     samplerate = 16000
 
                 asr = load_asr_pipeline()
@@ -330,7 +332,7 @@ if user_prompt:
             with st.spinner("🔊 Generating voice audio..."):
                 speech_text = user_prompt
                 
-                # Carefully strip command prefixes/suffixes without stripping content words like 'to' or 'in'
+                # Strip prefix & suffix commands cleanly
                 speech_text = re.sub(r"^(convert|say out loud|text to speech|speak|read this out|say|tts)\s+", "", speech_text, flags=re.IGNORECASE)
                 speech_text = re.sub(r"\s+(to speech|in speech|to audio|in audio)$", "", speech_text, flags=re.IGNORECASE)
                 speech_text = speech_text.strip()
