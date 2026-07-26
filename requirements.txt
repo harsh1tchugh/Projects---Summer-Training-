@@ -1,6 +1,7 @@
 streamlit
 torch
 torchaudio
+torchvision 
 transformers
 diffusers
 gTTS
